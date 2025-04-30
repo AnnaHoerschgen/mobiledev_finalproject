@@ -51,7 +51,7 @@ struct ContentView: View {
                             .foregroundColor(.red)
                     } else {
                         // Display Pokemon List
-                        PokemonListView(filteredPokemon: getFilteredPokemon(), viewModel: viewModel)
+                        PokemonListView(filteredPokemon: getFilteredPokemon(), viewModel: viewModel) // Pass viewModel
                     }
                 }
                 .padding(.top)
