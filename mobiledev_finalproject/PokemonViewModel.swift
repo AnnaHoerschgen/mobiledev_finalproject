@@ -59,7 +59,7 @@ class PokemonViewModel: ObservableObject {
 
     // Fetch the list of all Pokémon (pagination can be handled if necessary)
     func fetchAllPokemon() {
-        let urlString = "\(baseURL)?limit=100"  // Fetch the first 100 Pokémon, adjust as needed
+        let urlString = "\(baseURL)"  // Fetch the first 100 Pokémon, adjust as needed
         guard let url = URL(string: urlString) else {
             self.errorMessage = "Invalid URL"
             return
