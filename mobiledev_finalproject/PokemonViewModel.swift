@@ -13,19 +13,22 @@ class PokemonViewModel: ObservableObject {
     @Published var pokemonList: [PokemonResponse] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
+    @Published var hasSearched: Bool = false  // Track search attempts
 
     private var cancellables = Set<AnyCancellable>()
     
-    // Fetch Pokémon from API, either all or based on search term
+    private let baseURL = "https://pokeapi.co/api/v2/pokemon/"
+
+    // Fetch all Pokémon or a specific Pokémon if a search term is provided
     func fetchPokemon(searchTerm: String? = nil) {
-        let baseUrl = "https://example.com/api/pokemon" // Replace with your actual API URL
-        var urlString = baseUrl
+        var urlString: String
         
-        // If a search term is provided, append it to the URL (assuming the API supports search)
         if let searchTerm = searchTerm, !searchTerm.isEmpty {
-            urlString += "?search=\(searchTerm)"
+            urlString = "\(baseURL)\(searchTerm.lowercased())"
+        } else {
+            urlString = baseURL
         }
-        
+
         guard let url = URL(string: urlString) else {
             self.errorMessage = "Invalid URL"
             return
@@ -33,10 +36,12 @@ class PokemonViewModel: ObservableObject {
 
         isLoading = true
         errorMessage = nil
+        hasSearched = searchTerm != nil && !searchTerm!.isEmpty // Set flag only when a search term is provided
 
+        // Perform the network request
         URLSession.shared.dataTaskPublisher(for: url)
             .map { $0.data }
-            .decode(type: [PokemonResponse].self, decoder: JSONDecoder())
+            .decode(type: PokemonResponse.self, decoder: JSONDecoder())
             .receive(on: DispatchQueue.main)
             .sink(receiveCompletion: { [weak self] completion in
                 self?.isLoading = false
@@ -46,18 +51,48 @@ class PokemonViewModel: ObservableObject {
                 case .finished:
                     break
                 }
-            }, receiveValue: { [weak self] pokemons in
-                self?.pokemonList = pokemons
+            }, receiveValue: { [weak self] pokemon in
+                self?.pokemonList = [pokemon]  // Store only the fetched Pokémon (as we're now fetching a single Pokémon)
             })
             .store(in: &cancellables)
     }
 
-    // Optional: Filter Pokémon by region (if region info is available)
+    // Fetch the list of all Pokémon (pagination can be handled if necessary)
+    func fetchAllPokemon() {
+        let urlString = "\(baseURL)?limit=100"  // Fetch the first 100 Pokémon, adjust as needed
+        guard let url = URL(string: urlString) else {
+            self.errorMessage = "Invalid URL"
+            return
+        }
+
+        isLoading = true
+        errorMessage = nil
+        hasSearched = false // No search was made
+
+        // Fetch the list of all Pokémon
+        URLSession.shared.dataTaskPublisher(for: url)
+            .map { $0.data }
+            .decode(type: PokemonListResponse.self, decoder: JSONDecoder())
+            .receive(on: DispatchQueue.main)
+            .sink(receiveCompletion: { [weak self] completion in
+                self?.isLoading = false
+                switch completion {
+                case .failure(let error):
+                    self?.errorMessage = "Failed to load Pokémon list: \(error.localizedDescription)"
+                case .finished:
+                    break
+                }
+            }, receiveValue: { [weak self] response in
+                self?.pokemonList = response.results // Store the list of Pokémon
+            })
+            .store(in: &cancellables)
+    }
+
+    // Optional: Filter Pokémon by region or type (can expand based on actual API structure)
     func filterByRegion(_ region: String) -> [PokemonResponse] {
         return pokemonList.filter { $0.region.lowercased() == region.lowercased() }
     }
 
-    // Fetch specific Pokémon by ID
     func getPokemon(by id: Int) -> PokemonResponse? {
         return pokemonList.first { $0.id == id }
     }

@@ -9,121 +9,113 @@ import SwiftUI
 
 struct PokemonDetailView: View {
     let pokemon: PokemonResponse
+    @ObservedObject var viewModel: PokemonViewModel
 
     var body: some View {
-        ZStack {
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color(hex: "#1B1F3B"),
-                    Color(hex: "#2C324C")
-                ]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .edgesIgnoringSafeArea(.all)
-
-            ScrollView {
-                VStack(spacing: 16) {
-                    Text(pokemon.name)
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundColor(Color(hex: "#FF5C5C"))
-
-                    Text("National Dex #: \(pokemon.nationalDexNumber)")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-
-                    if let spriteURL = pokemon.sprites.defaultFrontMale,
-                       let url = URL(string: spriteURL) {
-                        AsyncImage(url: url) { phase in
-                            switch phase {
-                            case .empty:
-                                ProgressView()
-                            case .success(let image):
-                                image
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(height: 120)
-                            case .failure:
-                                Image(systemName: "photo")
-                                    .foregroundColor(.gray)
-                            @unknown default:
-                                EmptyView()
-                            }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(pokemon.name.capitalized)
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .foregroundColor(Color(hex: "#FF5C5C"))
+                
+                if let spriteURL = pokemon.sprites.defaultFrontMale,
+                   let url = URL(string: spriteURL) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            ProgressView()
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 200, height: 200)
+                        case .failure:
+                            Image(systemName: "photo")
+                                .foregroundColor(.gray)
+                        @unknown default:
+                            EmptyView()
                         }
                     }
+                }
 
-                    HStack {
-                        ForEach(pokemon.types, id: \.self) { type in
-                            Text(type)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(Color(hex: "#4DA6FF").opacity(0.2))
-                                .foregroundColor(Color(hex: "#4DA6FF"))
-                                .cornerRadius(12)
-                        }
-                    }
-
+                Text("Dex #\(pokemon.nationalDexNumber)")
+                    .font(.headline)
+                    .foregroundColor(.gray)
+                
+                Text("Types: \(pokemon.types.joined(separator: ", "))")
+                    .font(.subheadline)
+                    .foregroundColor(Color(hex: "#4DA6FF"))
+                
+                if !viewModel.abilities.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Abilities")
                             .font(.headline)
                             .foregroundColor(Color(hex: "#FF5C5C"))
-
-                        ForEach(pokemon.abilities, id: \.name) { ability in
-                            VStack(alignment: .leading) {
-                                Text(ability.name)
-                                    .foregroundColor(Color(hex: "#4DA6FF"))
-                                    .fontWeight(.semibold)
-                                Text(ability.description)
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                            }
-                        }
-
-                        if !pokemon.hiddenAbilities.isEmpty {
-                            Text("Hidden Abilities")
-                                .font(.headline)
-                                .foregroundColor(Color(hex: "#FF5C5C"))
-                                .padding(.top, 8)
-
-                            ForEach(pokemon.hiddenAbilities, id: \.name) { ability in
-                                VStack(alignment: .leading) {
-                                    Text(ability.name)
-                                        .foregroundColor(Color(hex: "#4DA6FF"))
-                                        .fontWeight(.semibold)
-                                    Text(ability.description)
-                                        .font(.caption)
-                                        .foregroundColor(.gray)
-                                }
-                            }
-                        }
-                    }
-
-                    if !pokemon.evolutionLine.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Evolution Line")
-                                .font(.headline)
-                                .foregroundColor(Color(hex: "#FF5C5C"))
-
-                            ForEach(pokemon.evolutionLine) { stage in
-                                HStack {
-                                    Text(stage.name)
-                                        .foregroundColor(stage.isCurrent ? Color(hex: "#FF5C5C") : .white)
-                                        .fontWeight(stage.isCurrent ? .bold : .regular)
-                                    if let details = stage.evolutionDetails {
-                                        Text("(\(details))")
-                                            .foregroundColor(.gray)
-                                            .font(.footnote)
-                                    }
-                                }
-                            }
+                        ForEach(viewModel.abilities, id: \.name) { ability in
+                            Text(ability.name.capitalized)
+                                .font(.subheadline)
                         }
                     }
                 }
-                .padding()
+
+                if !viewModel.forms.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Forms")
+                            .font(.headline)
+                            .foregroundColor(Color(hex: "#FF5C5C"))
+                        ForEach(viewModel.forms, id: \.formName) { form in
+                            Text(form.formName.capitalized)
+                                .font(.subheadline)
+                        }
+                    }
+                }
+
+                if !viewModel.gameAppearances.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Game Appearances")
+                            .font(.headline)
+                            .foregroundColor(Color(hex: "#FF5C5C"))
+                        ForEach(viewModel.gameAppearances, id: \.name) { game in
+                            Text(game.name.capitalized)
+                                .font(.subheadline)
+                        }
+                    }
+                }
+
+                if !viewModel.moves.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Moves")
+                            .font(.headline)
+                            .foregroundColor(Color(hex: "#FF5C5C"))
+                        ForEach(viewModel.moves, id: \.name) { move in
+                            Text(move.name.capitalized)
+                                .font(.subheadline)
+                        }
+                    }
+                }
+
+                if !viewModel.stats.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Stats")
+                            .font(.headline)
+                            .foregroundColor(Color(hex: "#FF5C5C"))
+                        ForEach(viewModel.stats, id: \.name) { stat in
+                            Text("\(stat.name.capitalized): \(stat.baseStat)")
+                                .font(.subheadline)
+                        }
+                    }
+                }
             }
+            .padding()
         }
-        .navigationTitle(pokemon.name)
-        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            viewModel.fetchAbilities(for: pokemon)
+            viewModel.fetchForms(for: pokemon)
+            viewModel.fetchGameAppearances(for: pokemon)
+            viewModel.fetchMoveDetails(for: pokemon)
+            viewModel.fetchStatDetails(for: pokemon)
+        }
+        .navigationBarTitle(pokemon.name.capitalized, displayMode: .inline)
     }
 }

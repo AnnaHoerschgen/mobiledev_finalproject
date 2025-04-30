@@ -7,6 +7,7 @@
 
 import Foundation
 
+// PokemonResponse for a single Pokémon
 struct PokemonResponse: Identifiable, Codable {
     let id: Int
     let name: String
@@ -60,4 +61,33 @@ struct SpriteData: Codable {
 struct SpriteVariant: Codable {
     let formName: String
     let spriteURL: String
+}
+
+// PokemonListResponse for fetching a list of Pokémon (no longer directly needed in ViewModel)
+struct PokemonListResponse: Codable {
+    let results: [PokemonResponse]
+}
+
+// MARK: models for other endpoints
+
+struct PokemonForm: Codable {
+    let name: String
+    let formName: String
+    let spriteURL: String
+}
+
+struct GameAppearance: Codable {
+    let name: String
+}
+
+struct MoveDetail: Codable {
+    let name: String
+    let power: Int?
+    let pp: Int?
+    let accuracy: Int?
+}
+
+struct StatDetail: Codable {
+    let name: String
+    let baseStat: Int
 }
