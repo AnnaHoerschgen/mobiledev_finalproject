@@ -9,11 +9,12 @@ import SwiftUI
 
 struct PokemonListView: View {
     let filteredPokemon: [PokemonResponse]
+    @ObservedObject var viewModel: PokemonViewModel // Add this line to pass the viewModel
 
     var body: some View {
         List {
             ForEach(filteredPokemon) { pokemon in
-                NavigationLink(destination: PokemonDetailView(pokemon: pokemon)) {
+                NavigationLink(destination: PokemonDetailView(pokemon: pokemon, viewModel: viewModel)) {
                     HStack(spacing: 16) {
                         PokemonImageView(spriteURL: pokemon.sprites.defaultFrontMale)
 
@@ -40,5 +41,6 @@ struct PokemonListView: View {
 }
 
 #Preview {
-    PokemonListView(filteredPokemon: [])
+    // Pass the viewModel from ContentView or a mock instance here
+    PokemonListView(filteredPokemon: [], viewModel: PokemonViewModel())
 }

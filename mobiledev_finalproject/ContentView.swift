@@ -7,8 +7,6 @@
 
 import SwiftUI
 
-import SwiftUI
-
 struct ContentView: View {
     @StateObject private var viewModel = PokemonViewModel()
     @State private var searchText: String = ""
@@ -27,6 +25,7 @@ struct ContentView: View {
                 .edgesIgnoringSafeArea(.all)
 
                 VStack(spacing: 12) {
+                    // Search Text Field
                     TextField("Search Pokémon...", text: $searchText)
                         .padding(12)
                         .background(Color.white.opacity(0.1))
@@ -38,73 +37,63 @@ struct ContentView: View {
                                 .stroke(Color.white.opacity(0.2), lineWidth: 1)
                         )
                         .onSubmit {
-                            viewModel.fetchPokemon(searchTerm: searchText)
-                            viewModel.resetDetails() // Reset details on new search
+                            handleSearchTextChange() // Trigger search on submit
                         }
 
-                    if viewModel.isLoading {
+                    // Show loading indicator only when searching
+                    if viewModel.isLoading && !searchText.isEmpty {
                         ProgressView("Loading Pokédex...")
                             .foregroundColor(.white)
                             .padding()
-                    } else if let error = viewModel.errorMessage {
+                    } else if let error = viewModel.errorMessage, viewModel.hasSearched {
+                        // Only show error message after a failed search attempt
                         Text(error)
                             .foregroundColor(.red)
                     } else {
-                        if let pokemon = viewModel.pokemon {
-                            // Display single Pokémon details if search has been performed
-                            PokemonDetailView(pokemon: pokemon, viewModel: viewModel)
-                        } else {
-                            // Display Pokémon list when no search has been performed
-                            List {
-                                ForEach(viewModel.pokemonList) { pokemon in
-                                    NavigationLink(destination: PokemonDetailView(pokemon: pokemon, viewModel: viewModel)) {
-                                        HStack(spacing: 16) {
-                                            if let spriteURL = pokemon.sprites.defaultFrontMale,
-                                               let url = URL(string: spriteURL) {
-                                                AsyncImage(url: url) { phase in
-                                                    switch phase {
-                                                    case .empty:
-                                                        ProgressView()
-                                                    case .success(let image):
-                                                        image
-                                                            .resizable()
-                                                            .scaledToFit()
-                                                            .frame(width: 50, height: 50)
-                                                    case .failure:
-                                                        Image(systemName: "photo")
-                                                            .foregroundColor(.gray)
-                                                    @unknown default:
-                                                        EmptyView()
-                                                    }
-                                                }
-                                            }
-
-                                            VStack(alignment: .leading, spacing: 4) {
-                                                Text(pokemon.name)
-                                                    .font(.headline)
-                                                    .foregroundColor(Color(hex: "#FF5C5C"))
-                                                Text("Dex #\(pokemon.nationalDexNumber)")
-                                                    .font(.subheadline)
-                                                    .foregroundColor(.gray)
-                                                Text(pokemon.types.joined(separator: ", "))
-                                                    .font(.footnote)
-                                                    .foregroundColor(Color(hex: "#4DA6FF"))
-                                            }
-                                        }
-                                        .padding(.vertical, 6)
-                                    }
-                                    .listRowBackground(Color.clear)
-                                }
-                            }
-                            .listStyle(PlainListStyle())
-                            .background(Color.clear)
-                        }
+                        // Display Pokemon List
+                        PokemonListView(filteredPokemon: getFilteredPokemon(), viewModel: viewModel)
                     }
                 }
                 .padding(.top)
             }
             .navigationTitle("Pokédex")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                // Initial fetch if searchText is empty
+                if searchText.isEmpty {
+                    viewModel.fetchPokemon()
+                }
+            }
         }
     }
+
+    // Handle the logic when the search text changes (triggered manually)
+    private func handleSearchTextChange() {
+        if !searchText.isEmpty {
+            viewModel.isLoading = true
+            viewModel.fetchPokemon(searchTerm: searchText)
+        } else {
+            viewModel.isLoading = false
+        }
+    }
+
+    // Get filtered Pokémon based on search text
+    private func getFilteredPokemon() -> [PokemonResponse] {
+        if searchText.isEmpty {
+            return viewModel.pokemonList
+        } else {
+            return filterPokemon(searchTerm: searchText)
+        }
+    }
+
+    // Filter Pokémon list based on the search term
+    private func filterPokemon(searchTerm: String) -> [PokemonResponse] {
+        return viewModel.pokemonList.filter { pokemon in
+            pokemon.name.lowercased().contains(searchTerm.lowercased())
+        }
+    }
+}
+
+#Preview {
+    ContentView()
 }
