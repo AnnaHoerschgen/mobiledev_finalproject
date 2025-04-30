@@ -25,6 +25,7 @@ struct ContentView: View {
                 .edgesIgnoringSafeArea(.all)
 
                 VStack(spacing: 12) {
+                    // Search Text Field
                     TextField("Search Pokémon...", text: $searchText)
                         .padding(12)
                         .background(Color.white.opacity(0.1))
@@ -35,8 +36,12 @@ struct ContentView: View {
                             RoundedRectangle(cornerRadius: 10)
                                 .stroke(Color.white.opacity(0.2), lineWidth: 1)
                         )
+                        .onSubmit {
+                            handleSearchTextChange() // Trigger search on submit
+                        }
 
-                    if viewModel.isLoading {
+                    // Show loading indicator only when searching
+                    if viewModel.isLoading && !searchText.isEmpty {
                         ProgressView("Loading Pokédex...")
                             .foregroundColor(.white)
                             .padding()
@@ -44,49 +49,8 @@ struct ContentView: View {
                         Text(error)
                             .foregroundColor(.red)
                     } else {
-                        List {
-                            ForEach(filteredPokemon) { pokemon in
-                                NavigationLink(destination: PokemonDetailView(pokemon: pokemon)) {
-                                    HStack(spacing: 16) {
-                                        if let spriteURL = pokemon.sprites.defaultFrontMale,
-                                           let url = URL(string: spriteURL) {
-                                            AsyncImage(url: url) { phase in
-                                                switch phase {
-                                                case .empty:
-                                                    ProgressView()
-                                                case .success(let image):
-                                                    image
-                                                        .resizable()
-                                                        .scaledToFit()
-                                                        .frame(width: 50, height: 50)
-                                                case .failure:
-                                                    Image(systemName: "photo")
-                                                        .foregroundColor(.gray)
-                                                @unknown default:
-                                                    EmptyView()
-                                                }
-                                            }
-                                        }
-
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(pokemon.name)
-                                                .font(.headline)
-                                                .foregroundColor(Color(hex: "#FF5C5C"))
-                                            Text("Dex #\(pokemon.nationalDexNumber)")
-                                                .font(.subheadline)
-                                                .foregroundColor(.gray)
-                                            Text(pokemon.types.joined(separator: ", "))
-                                                .font(.footnote)
-                                                .foregroundColor(Color(hex: "#4DA6FF"))
-                                        }
-                                    }
-                                    .padding(.vertical, 6)
-                                }
-                                .listRowBackground(Color.clear)
-                            }
-                        }
-                        .listStyle(PlainListStyle())
-                        .background(Color.clear)
+                        // Display Pokemon List
+                        PokemonListView(filteredPokemon: getFilteredPokemon())
                     }
                 }
                 .padding(.top)
@@ -94,18 +58,98 @@ struct ContentView: View {
             .navigationTitle("Pokédex")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
-                viewModel.fetchPokemon()
+                // Initial fetch if searchText is empty
+                if searchText.isEmpty {
+                    viewModel.fetchPokemon()
+                }
             }
         }
     }
 
-    private var filteredPokemon: [PokemonResponse] {
+    // Handle the logic when the search text changes (triggered manually)
+    private func handleSearchTextChange() {
+        if !searchText.isEmpty {
+            viewModel.isLoading = true
+            viewModel.fetchPokemon(searchTerm: searchText)
+        } else {
+            viewModel.isLoading = false
+        }
+    }
+
+    // Get filtered Pokémon based on search text
+    private func getFilteredPokemon() -> [PokemonResponse] {
         if searchText.isEmpty {
             return viewModel.pokemonList
         } else {
-            return viewModel.pokemonList.filter {
-                $0.name.lowercased().contains(searchText.lowercased())
+            return filterPokemon(searchTerm: searchText)
+        }
+    }
+
+    // Filter Pokémon list based on the search term
+    private func filterPokemon(searchTerm: String) -> [PokemonResponse] {
+        return viewModel.pokemonList.filter { pokemon in
+            pokemon.name.lowercased().contains(searchTerm.lowercased())
+        }
+    }
+}
+
+struct PokemonListView: View {
+    let filteredPokemon: [PokemonResponse]
+
+    var body: some View {
+        List {
+            ForEach(filteredPokemon) { pokemon in
+                NavigationLink(destination: PokemonDetailView(pokemon: pokemon)) {
+                    HStack(spacing: 16) {
+                        PokemonImageView(spriteURL: pokemon.sprites.defaultFrontMale)
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(pokemon.name)
+                                .font(.headline)
+                                .foregroundColor(Color(hex: "#FF5C5C"))
+                            Text("Dex #\(pokemon.nationalDexNumber)")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                            Text(pokemon.types.joined(separator: ", "))
+                                .font(.footnote)
+                                .foregroundColor(Color(hex: "#4DA6FF"))
+                        }
+                    }
+                    .padding(.vertical, 6)
+                }
+                .listRowBackground(Color.clear)
             }
+        }
+        .listStyle(PlainListStyle())
+        .background(Color.clear)
+    }
+}
+
+struct PokemonImageView: View {
+    let spriteURL: String?
+
+    var body: some View {
+        if let spriteURL = spriteURL, let url = URL(string: spriteURL) {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .empty:
+                    ProgressView()
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 50, height: 50)
+                case .failure:
+                    Image(systemName: "photo")
+                        .foregroundColor(.gray)
+                @unknown default:
+                    EmptyView()
+                }
+            }
+        } else {
+            Image(systemName: "photo")
+                .foregroundColor(.gray)
+                .frame(width: 50, height: 50)
         }
     }
 }

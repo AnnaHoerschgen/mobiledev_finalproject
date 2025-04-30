@@ -16,9 +16,17 @@ class PokemonViewModel: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
     
-    // Sample fetch method (replace with your actual URL)
-    func fetchPokemon() {
-        guard let url = URL(string: "https://example.com/api/pokemon") else {
+    // Fetch Pokémon from API, either all or based on search term
+    func fetchPokemon(searchTerm: String? = nil) {
+        let baseUrl = "https://example.com/api/pokemon" // Replace with your actual API URL
+        var urlString = baseUrl
+        
+        // If a search term is provided, append it to the URL (assuming the API supports search)
+        if let searchTerm = searchTerm, !searchTerm.isEmpty {
+            urlString += "?search=\(searchTerm)"
+        }
+        
+        guard let url = URL(string: urlString) else {
             self.errorMessage = "Invalid URL"
             return
         }
@@ -44,11 +52,12 @@ class PokemonViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    // Optional: Filter by region or type, etc.
+    // Optional: Filter Pokémon by region (if region info is available)
     func filterByRegion(_ region: String) -> [PokemonResponse] {
         return pokemonList.filter { $0.region.lowercased() == region.lowercased() }
     }
 
+    // Fetch specific Pokémon by ID
     func getPokemon(by id: Int) -> PokemonResponse? {
         return pokemonList.first { $0.id == id }
     }
