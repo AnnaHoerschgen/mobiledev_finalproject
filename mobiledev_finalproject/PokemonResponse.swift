@@ -67,27 +67,3 @@ struct SpriteVariant: Codable {
 struct PokemonListResponse: Codable {
     let results: [PokemonResponse]
 }
-
-// MARK: models for other endpoints
-
-struct PokemonForm: Codable {
-    let name: String
-    let formName: String
-    let spriteURL: String
-}
-
-struct GameAppearance: Codable {
-    let name: String
-}
-
-struct MoveDetail: Codable {
-    let name: String
-    let power: Int?
-    let pp: Int?
-    let accuracy: Int?
-}
-
-struct StatDetail: Codable {
-    let name: String
-    let baseStat: Int
-}
