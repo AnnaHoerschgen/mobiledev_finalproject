@@ -10,7 +10,8 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var viewModel = PokemonViewModel()  // View model for handling data
     @State private var searchText: String = ""  // Search text entered by the user
-    
+    @State private var hasSearched: Bool = false // Track whether the user has searched
+
     var body: some View {
         NavigationView {
             ZStack {
@@ -31,6 +32,7 @@ struct ContentView: View {
                                 .stroke(Color.white.opacity(0.2), lineWidth: 1)
                         )
                         .onChange(of: searchText) { _ in
+                            hasSearched = !searchText.isEmpty  // Mark as searched if there is text
                             filterPokemon()  // Fetch Pokémon based on the updated search text
                         }
                     
@@ -42,8 +44,11 @@ struct ContentView: View {
                     } else if let error = viewModel.errorMessage {
                         Text(error)
                             .foregroundColor(.red)
+                            .padding()
                     } else {
-                        pokemonListView  // Displays the filtered Pokémon list view
+                        if hasSearched {  // Only show search results if there is a search
+                            pokemonListView  // Displays the filtered Pokémon list view
+                        }
                     }
                 }
                 .padding(.top)
@@ -57,7 +62,6 @@ struct ContentView: View {
         }
     }
 
-    
     // View for displaying the list of Pokémon
     private var pokemonListView: some View {
         List {
@@ -75,7 +79,9 @@ struct ContentView: View {
     
     // Function to handle filtering Pokémon list based on search text
     private func filterPokemon() {
-        viewModel.fetchPokemon(searchText: searchText)
+        if !searchText.isEmpty {
+            viewModel.fetchPokemon(searchText: searchText)  // Fetch results only if there's search text
+        }
     }
     
     // Computed property to filter the Pokémon list based on the search text
@@ -88,4 +94,8 @@ struct ContentView: View {
             }
         }
     }
+}
+
+#Preview {
+    ContentView()
 }
