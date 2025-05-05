@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct FavoritesView: View {
-    let favoritePokemons: [PokemonResponse]
+    @ObservedObject var viewModel: PokemonViewModel  // Use viewModel here
 
     var body: some View {
         ZStack {
@@ -25,16 +25,15 @@ struct FavoritesView: View {
 
             VStack {
                 // Show message if there are no favorites
-                if favoritePokemons.isEmpty {
+                if viewModel.favoritePokemons.isEmpty {
                     Text("No favorites yet")
                         .font(.title)
                         .foregroundColor(.gray)
                         .padding()
                 } else {
-                    List(favoritePokemons) { pokemon in
+                    List(viewModel.favoritePokemons) { pokemon in
                         NavigationLink(destination: PokemonDetailView(pokemon: pokemon)) {
-                            // Pass pokemon and viewModel to PokemonRow
-                            PokemonRow(pokemon: pokemon, searchTerm: "", viewModel: PokemonViewModel())
+                            PokemonRow(pokemon: pokemon, searchTerm: "", viewModel: viewModel)
                         }
                         .listRowBackground(Color.clear) // Set clear background for list rows
                     }

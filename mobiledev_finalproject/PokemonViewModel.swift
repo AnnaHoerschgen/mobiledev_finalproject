@@ -13,13 +13,12 @@ class PokemonViewModel: ObservableObject {
     @Published var favoritePokemons: [PokemonResponse] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
-    
-    // Add searchText property to the view model
-    @Published var searchText: String = ""
+    @Published var searchText: String = ""  // Search text is now only in the ViewModel
 
     private var cancellables = Set<AnyCancellable>()
     
-    func fetchPokemon(searchText: String) {
+    // Modify the function to fetch Pokémon data
+    func fetchPokemon() {
         guard let url = URL(string: "https://pokeapi.co/api/v2/pokemon?limit=100") else {
             self.errorMessage = "Invalid URL"
             return
@@ -46,6 +45,7 @@ class PokemonViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
+    // Toggle favorite Pokémon
     func toggleFavorite(_ pokemon: PokemonResponse) {
         if let index = favoritePokemons.firstIndex(where: { $0.id == pokemon.id }) {
             favoritePokemons.remove(at: index)
@@ -54,7 +54,7 @@ class PokemonViewModel: ObservableObject {
         }
     }
 
-    // Modify filteredPokemon to use the view model's searchText
+    // Filter Pokémon based on the search text
     var filteredPokemon: [PokemonResponse] {
         if searchText.isEmpty {
             return pokemonList

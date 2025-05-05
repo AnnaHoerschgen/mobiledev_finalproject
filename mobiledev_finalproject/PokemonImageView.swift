@@ -9,7 +9,7 @@ import SwiftUI
 
 struct PokemonImageView: View {
     let spriteURL: String?
-
+    
     var body: some View {
         Group {
             if let spriteURL = spriteURL, let url = URL(string: spriteURL) {
@@ -39,8 +39,4 @@ struct PokemonImageView: View {
             }
         }
     }
-}
-
-#Preview {
-    PokemonImageView(spriteURL: nil)
 }

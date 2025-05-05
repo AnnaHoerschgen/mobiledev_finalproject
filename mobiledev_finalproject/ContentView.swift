@@ -9,8 +9,6 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var viewModel = PokemonViewModel()  // View model for handling data
-    @State private var searchText: String = ""  // Search text entered by the user
-    @State private var hasSearched: Bool = false // Track whether the user has searched
 
     var body: some View {
         NavigationView {
@@ -21,7 +19,7 @@ struct ContentView: View {
                 
                 VStack(spacing: 12) {
                     // Search bar
-                    TextField("Search Pokémon...", text: $searchText)
+                    TextField("Search Pokémon...", text: $viewModel.searchText)
                         .padding(12)
                         .background(Color.white.opacity(0.1))
                         .foregroundColor(.white)
@@ -31,11 +29,7 @@ struct ContentView: View {
                             RoundedRectangle(cornerRadius: 10)
                                 .stroke(Color.white.opacity(0.2), lineWidth: 1)
                         )
-                        .onChange(of: searchText) { _ in
-                            hasSearched = !searchText.isEmpty  // Mark as searched if there is text
-                            filterPokemon()  // Fetch Pokémon based on the updated search text
-                        }
-                    
+
                     // Display loading or error message
                     if viewModel.isLoading {
                         ProgressView("Loading Pokédex...")
@@ -46,9 +40,8 @@ struct ContentView: View {
                             .foregroundColor(.red)
                             .padding()
                     } else {
-                        if hasSearched {  // Only show search results if there is a search
-                            pokemonListView  // Displays the filtered Pokémon list view
-                        }
+                        // Show search results only if the user has searched or no search
+                        pokemonListView
                     }
                 }
                 .padding(.top)
@@ -56,8 +49,7 @@ struct ContentView: View {
             .navigationTitle("Pokédex")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
-                // Call the fetchPokemon() function when the view appears
-                viewModel.fetchPokemon(searchText: searchText)
+                viewModel.fetchPokemon()  // Fetch Pokémon when the view appears
             }
         }
     }
@@ -65,34 +57,15 @@ struct ContentView: View {
     // View for displaying the list of Pokémon
     private var pokemonListView: some View {
         List {
-            ForEach(filteredPokemon) { pokemon in
+            ForEach(viewModel.filteredPokemon) { pokemon in
                 NavigationLink(destination: PokemonDetailView(pokemon: pokemon)) {
-                    // Pass pokemon, the searchText value as searchTerm, and the viewModel
-                    PokemonRow(pokemon: pokemon, searchTerm: searchText, viewModel: viewModel)
+                    PokemonRow(pokemon: pokemon, searchTerm: viewModel.searchText, viewModel: viewModel)
                 }
                 .listRowBackground(Color.clear) // Set clear background for list rows
             }
         }
         .listStyle(PlainListStyle())
         .background(Color.clear)
-    }
-    
-    // Function to handle filtering Pokémon list based on search text
-    private func filterPokemon() {
-        if !searchText.isEmpty {
-            viewModel.fetchPokemon(searchText: searchText)  // Fetch results only if there's search text
-        }
-    }
-    
-    // Computed property to filter the Pokémon list based on the search text
-    private var filteredPokemon: [PokemonResponse] {
-        if searchText.isEmpty {
-            return viewModel.pokemonList
-        } else {
-            return viewModel.pokemonList.filter {
-                $0.name.lowercased().contains(searchText.lowercased())
-            }
-        }
     }
 }
 
