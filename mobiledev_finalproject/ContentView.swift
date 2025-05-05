@@ -8,24 +8,19 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var viewModel = PokemonViewModel()
-    @State private var searchText: String = ""
+    @StateObject private var viewModel = PokemonViewModel()  // View model for handling data
+    @State private var searchText: String = ""  // Search text entered by the user
+    @State private var filteredPokemon: [PokemonResponse] = []  // Caching filtered results
 
     var body: some View {
         NavigationView {
             ZStack {
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Color(hex: "#1B1F3B"),
-                        Color(hex: "#2C324C")
-                    ]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .edgesIgnoringSafeArea(.all)
+                // Darker blue background for the entire content view
+                Color(hex: "#2C324C") // Apply dark blue background color here
+                    .edgesIgnoringSafeArea(.all) // Ensures the background extends beyond the safe area
 
                 VStack(spacing: 12) {
-                    // Search Text Field
+                    // Search bar
                     TextField("Search Pokémon...", text: $searchText)
                         .padding(12)
                         .background(Color.white.opacity(0.1))
@@ -36,22 +31,30 @@ struct ContentView: View {
                             RoundedRectangle(cornerRadius: 10)
                                 .stroke(Color.white.opacity(0.2), lineWidth: 1)
                         )
-                        .onSubmit {
-                            handleSearchTextChange() // Trigger search on submit
+                        .onChange(of: searchText) { _ in
+                            filterPokemon()  // Call filter function whenever search text changes
                         }
 
-                    // Show loading indicator only when searching
-                    if viewModel.isLoading && !searchText.isEmpty {
+                    // Display loading or error message
+                    if viewModel.isLoading {
                         ProgressView("Loading Pokédex...")
                             .foregroundColor(.white)
                             .padding()
-                    } else if let error = viewModel.errorMessage, viewModel.hasSearched {
-                        // Only show error message after a failed search attempt
+                    } else if let error = viewModel.errorMessage {
                         Text(error)
                             .foregroundColor(.red)
                     } else {
-                        // Display Pokemon List
-                        PokemonListView(filteredPokemon: getFilteredPokemon(), viewModel: viewModel) // Pass viewModel
+                        List {
+                            ForEach(filteredPokemon) { pokemon in
+                                NavigationLink(destination: PokemonDetailView(pokemon: pokemon)) {
+                                    // Pass both pokemon and searchText to PokemonRow
+                                    PokemonRow(pokemon: pokemon, searchText: $searchText, viewModel: viewModel)
+                                }
+                                .listRowBackground(Color.clear) // Set clear background for list rows
+                            }
+                        }
+                        .listStyle(PlainListStyle())
+                        .background(Color.clear)
                     }
                 }
                 .padding(.top)
@@ -59,41 +62,21 @@ struct ContentView: View {
             .navigationTitle("Pokédex")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
-                // Initial fetch if searchText is empty
-                if searchText.isEmpty {
-                    viewModel.fetchPokemon()
-                }
+                // Call the fetchPokemon() function to load data when the view appears
+                viewModel.fetchPokemon()
             }
         }
     }
 
-    // Handle the logic when the search text changes (triggered manually)
-    private func handleSearchTextChange() {
-        if !searchText.isEmpty {
-            viewModel.isLoading = true
-            viewModel.fetchPokemon(searchTerm: searchText)
-        } else {
-            viewModel.isLoading = false
-        }
-    }
-
-    // Get filtered Pokémon based on search text
-    private func getFilteredPokemon() -> [PokemonResponse] {
+    // Function to handle search and filter
+    private func filterPokemon() {
+        // Perform filtering based on search text
         if searchText.isEmpty {
-            return viewModel.pokemonList
+            filteredPokemon = viewModel.pokemonList
         } else {
-            return filterPokemon(searchTerm: searchText)
+            filteredPokemon = viewModel.pokemonList.filter { pokemon in
+                pokemon.name.lowercased().contains(searchText.lowercased())
+            }
         }
     }
-
-    // Filter Pokémon list based on the search term
-    private func filterPokemon(searchTerm: String) -> [PokemonResponse] {
-        return viewModel.pokemonList.filter { pokemon in
-            pokemon.name.lowercased().contains(searchTerm.lowercased())
-        }
-    }
-}
-
-#Preview {
-    ContentView()
 }

@@ -9,33 +9,37 @@ import SwiftUI
 
 struct FavoritesView: View {
     let favoritePokemons: [PokemonResponse]
-    
+
     var body: some View {
-        List(favoritePokemons) { pokemon in
-            NavigationLink(destination: PokemonDetailView(pokemon: pokemon)) {
-                HStack {
-                    if let spriteURL = pokemon.sprites.defaultFrontMale,
-                       let url = URL(string: spriteURL) {
-                        AsyncImage(url: url) { phase in
-                            switch phase {
-                            case .empty:
-                                ProgressView()
-                            case .success(let image):
-                                image.resizable().scaledToFit().frame(width: 50, height: 50)
-                            case .failure:
-                                Image(systemName: "photo").foregroundColor(.gray)
-                            @unknown default:
-                                EmptyView()
-                            }
+        ZStack {
+            // Background gradient for Favorites screen
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(hex: "#1B1F3B"), // Dark Blue
+                    Color(hex: "#2C324C")  // Darker Blue
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .edgesIgnoringSafeArea(.all)
+
+            VStack {
+                if favoritePokemons.isEmpty {
+                    Text("No favorites yet")
+                        .font(.title)
+                        .foregroundColor(.gray)
+                        .padding()
+                } else {
+                    List(favoritePokemons) { pokemon in
+                        NavigationLink(destination: PokemonDetailView(pokemon: pokemon)) {
+                            PokemonRow(pokemon: pokemon, viewModel: PokemonViewModel()) // Pass viewModel to PokemonRow
                         }
+                        .listRowBackground(Color.clear) // Clear background for the list row
                     }
-                    
-                    Text(pokemon.name)
-                        .foregroundColor(.white)
                 }
             }
+            .navigationTitle("Favorites")
+            .navigationBarTitleDisplayMode(.inline)
         }
-        .background(Color(hex: "#1B1F3B"))
-        .listStyle(PlainListStyle())
     }
 }

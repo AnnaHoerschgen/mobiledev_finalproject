@@ -7,12 +7,11 @@
 
 import Foundation
 
-// PokemonResponse for a single Pokémon
 struct PokemonResponse: Identifiable, Codable {
     let id: Int
     let name: String
     let nationalDexNumber: Int
-    let types: [String] // ["Fire", "Flying"]
+    let types: [String]
     let category: String
     let evolutionLine: [EvolutionStage]
     let region: String
@@ -24,7 +23,7 @@ struct PokemonResponse: Identifiable, Codable {
     let alternateForms: [PokemonResponse]?
 }
 
-// MARK: - Supporting Models
+// MARK: Supporting Models
 
 struct EvolutionStage: Codable, Identifiable {
     var id: Int { pokemonID }
@@ -47,7 +46,7 @@ struct MovePool: Codable {
 
 struct Move: Codable {
     let name: String
-    let levelLearnedAt: Int? // nil if not learned via level-up
+    let levelLearnedAt: Int?
 }
 
 struct SpriteData: Codable {
@@ -61,9 +60,4 @@ struct SpriteData: Codable {
 struct SpriteVariant: Codable {
     let formName: String
     let spriteURL: String
-}
-
-// PokemonListResponse for fetching a list of Pokémon (no longer directly needed in ViewModel)
-struct PokemonListResponse: Codable {
-    let results: [PokemonResponse]
 }
