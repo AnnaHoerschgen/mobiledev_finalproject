@@ -24,6 +24,7 @@ struct FavoritesView: View {
             .edgesIgnoringSafeArea(.all)
 
             VStack {
+                // Show message if there are no favorites
                 if favoritePokemons.isEmpty {
                     Text("No favorites yet")
                         .font(.title)
@@ -32,12 +33,15 @@ struct FavoritesView: View {
                 } else {
                     List(favoritePokemons) { pokemon in
                         NavigationLink(destination: PokemonDetailView(pokemon: pokemon)) {
-                            PokemonRow(pokemon: pokemon, viewModel: PokemonViewModel()) // Pass viewModel to PokemonRow
+                            // Pass pokemon and viewModel to PokemonRow
+                            PokemonRow(pokemon: pokemon, searchTerm: "", viewModel: PokemonViewModel())
                         }
-                        .listRowBackground(Color.clear) // Clear background for the list row
+                        .listRowBackground(Color.clear) // Set clear background for list rows
                     }
+                    .listStyle(PlainListStyle())
                 }
             }
+            .padding(.top)
             .navigationTitle("Favorites")
             .navigationBarTitleDisplayMode(.inline)
         }
