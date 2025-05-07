@@ -13,11 +13,10 @@ class PokemonViewModel: ObservableObject {
     @Published var favoritePokemons: [PokemonResponse] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
-    @Published var searchText: String = ""  // Search text is now only in the ViewModel
+    @Published var searchText: String = ""
 
     private var cancellables = Set<AnyCancellable>()
-    
-    // Modify the function to fetch Pokémon data
+
     func fetchPokemon() {
         guard let url = URL(string: "https://pokeapi.co/api/v2/pokemon?limit=100") else {
             self.errorMessage = "Invalid URL"
@@ -28,24 +27,36 @@ class PokemonViewModel: ObservableObject {
         errorMessage = nil
 
         URLSession.shared.dataTaskPublisher(for: url)
-            .map { $0.data }
+            .map(\.data)
             .decode(type: PokemonAPIResponse.self, decoder: JSONDecoder())
+            .flatMap { response in
+                Publishers.MergeMany(response.results.map { self.fetchPokemonDetails(for: $0.name) })
+                    .collect()
+            }
             .receive(on: DispatchQueue.main)
             .sink(receiveCompletion: { [weak self] completion in
                 self?.isLoading = false
-                switch completion {
-                case .failure(let error):
+                if case .failure(let error) = completion {
                     self?.errorMessage = "Failed to load Pokémon: \(error.localizedDescription)"
-                case .finished:
-                    break
                 }
-            }, receiveValue: { [weak self] apiResponse in
-                self?.pokemonList = apiResponse.results
+            }, receiveValue: { [weak self] detailedPokemons in
+                self?.pokemonList = detailedPokemons
             })
             .store(in: &cancellables)
     }
 
-    // Toggle favorite Pokémon
+    private func fetchPokemonDetails(for name: String) -> AnyPublisher<PokemonResponse, Error> {
+        let urlString = "https://pokeapi.co/api/v2/pokemon/\(name)"
+        guard let url = URL(string: urlString) else {
+            return Fail(error: URLError(.badURL)).eraseToAnyPublisher()
+        }
+
+        return URLSession.shared.dataTaskPublisher(for: url)
+            .map(\.data)
+            .decode(type: PokemonResponse.self, decoder: JSONDecoder())
+            .eraseToAnyPublisher()
+    }
+
     func toggleFavorite(_ pokemon: PokemonResponse) {
         if let index = favoritePokemons.firstIndex(where: { $0.id == pokemon.id }) {
             favoritePokemons.remove(at: index)
@@ -54,7 +65,6 @@ class PokemonViewModel: ObservableObject {
         }
     }
 
-    // Filter Pokémon based on the search text
     var filteredPokemon: [PokemonResponse] {
         if searchText.isEmpty {
             return pokemonList
@@ -65,5 +75,10 @@ class PokemonViewModel: ObservableObject {
 }
 
 struct PokemonAPIResponse: Codable {
-    let results: [PokemonResponse]
+    let results: [PokemonListItem]
+}
+
+struct PokemonListItem: Codable {
+    let name: String
+    let url: String
 }
