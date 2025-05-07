@@ -12,4 +12,4 @@ I had to give up on more features to make the project presentable. These include
   - Detailed movepool display
   - The ability to view the pokemon's other forms (Mega Evolutions, G-Max, etc.)
   - Display that allowed to view both male and female sprites
-  - A cool custom theme that used hex codes for colors.
+  - A cool custom theme inspired by the Sinnoh Pokedex that used hex codes for colors.
