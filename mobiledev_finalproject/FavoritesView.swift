@@ -8,11 +8,16 @@
 import SwiftUI
 
 struct FavoritesView: View {
-    var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
-    }
-}
+    @ObservedObject var viewModel: PokemonViewModel
 
-#Preview {
-    FavoritesView()
+    var body: some View {
+        NavigationView {
+            List(viewModel.favorites) { pokemon in
+                NavigationLink(destination: DetailView(pokemon: pokemon, viewModel: viewModel)) {
+                    Text(pokemon.name.capitalized)
+                }
+            }
+            .navigationTitle("Favorites")
+        }
+    }
 }

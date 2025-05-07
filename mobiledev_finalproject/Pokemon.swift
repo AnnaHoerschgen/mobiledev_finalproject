@@ -5,14 +5,16 @@
 //  Created by HOERSCHGEN, ANNA M. on 5/7/25.
 //
 
-import SwiftUI
+struct Pokemon: Codable, Identifiable, Equatable {
+    let id: Int
+    let name: String
+    let sprites: Sprites
 
-struct Pokemon: View {
-    var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+    struct Sprites: Codable, Equatable {
+        let front_default: String?
     }
-}
 
-#Preview {
-    Pokemon()
+    static func == (lhs: Pokemon, rhs: Pokemon) -> Bool {
+        return lhs.id == rhs.id
+    }
 }

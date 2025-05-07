@@ -7,12 +7,38 @@
 
 import SwiftUI
 
-struct PokemonViewModel: View {
-    var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
-    }
-}
+import Foundation
 
-#Preview {
-    PokemonViewModel()
+class PokemonViewModel: ObservableObject {
+    @Published var searchText: String = ""
+    @Published var results: [Pokemon] = []
+    @Published var favorites: [Pokemon] = []
+
+    private let api = APIService()
+
+    func search() {
+        guard !searchText.isEmpty else { return }
+        api.fetchPokemon(named: searchText) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let pokemon):
+                    self.results = [pokemon]
+                case .failure:
+                    self.results = []
+                }
+            }
+        }
+    }
+
+    func toggleFavorite(_ pokemon: Pokemon) {
+        if let index = favorites.firstIndex(of: pokemon) {
+            favorites.remove(at: index)
+        } else {
+            favorites.append(pokemon)
+        }
+    }
+
+    func isFavorite(_ pokemon: Pokemon) -> Bool {
+        favorites.contains(pokemon)
+    }
 }
